@@ -119,7 +119,7 @@ train_target = target[:train_size]
 test_data = data[train_size:, :]
 test_target = target[train_size:]
 
-net = OneDimPredictor(window, hidden_size, predict_window)
+net = OneDimPredictor(window, hidden_size, predict_window,2)
 loss_function = nn.MSELoss()
 if UseCuda:
     net.cuda()
@@ -175,9 +175,6 @@ plt.figure()
 for i in range(len(Tall)):
     plt.plot(range(i*stepWindow,(i+1)*stepWindow), Tall[i], 'b')
     plt.plot(range(i*stepWindow+window,(i+1)*stepWindow),p_data_target[i], 'r')
-    plt.plot(range(i * stepWindow + window, (i + 1) * stepWindow), Ttarget[i], 'g')
-#plt.plot(range(0, len(Tall)), raw_data, 'b', label='real')
-#plt.plot(range(0, train_size), pred_train_target, 'g', label='predictTarget')
-# plt.plot(range(train_size, train_size+test_size), pred_test_target, 'r', label='predictTest')
+    #plt.plot(range(i * stepWindow + window, (i + 1) * stepWindow), Ttarget[i], 'g')
 plt.legend(loc='best')
 plt.show()
