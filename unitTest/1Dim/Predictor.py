@@ -10,7 +10,7 @@ import time
 
 csvFile = '../../data/IBM.csv'
 CloseIndex = 3
-UseCuda = False
+UseCuda = True
 
 def getCSVDataValuesWithLabel(fileName, label):
     """
@@ -123,15 +123,24 @@ for e in range(100):
 
 
 net = net.eval()
-pred_train_target = net(Variable(torch.from_numpy(train_data).float()))
-pred_train_target = pred_train_target.view(-1).data.numpy()
-pred_test_target = net(Variable(torch.from_numpy(test_data).float()))
+train_data_var = Variable(torch.from_numpy(train_data).float())
+test_data_var = Variable(torch.from_numpy(test_data).float())
+if UseCuda:
+    train_data_var = train_data_var.cuda()
+    test_data_var = test_data_var.cuda()
+pred_train_target = net(train_data_var)
+pred_test_target = net(test_data_var)
+
+if UseCuda:
+    pred_train_target = pred_train_target.cpu()
+    pred_test_target = pred_test_target.cpu()
+
+pred_train_target = pred_train_target.cpu().view(-1).data.numpy()
 pred_test_target = pred_test_target.view(-1).data.numpy()
 
 plt.figure()
 plt.plot(range(0, len(raw_data)), raw_data, 'b', label='real')
 plt.plot(range(0, train_size), pred_train_target, 'g', label='predictTarget')
 plt.plot(range(train_size, train_size+test_size), pred_test_target, 'r', label='predictTest')
-# plt.plot(range(window_size + train_size, len(rawdata)),pred_test_target,'r', label='predictTest')
 plt.legend(loc='best')
 plt.show()
