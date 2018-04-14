@@ -10,7 +10,7 @@ import time
 
 csvFile = '../../data/IBM.csv'
 CloseIndex = 3
-UseCuda = False
+UseCuda = True
 
 def getCSVDataValuesWithLabel(fileName, label):
     """
@@ -56,6 +56,14 @@ def test_one_hot_encoding():
     one_hot_list = one_hot_encode(list, n_classes)
     print(one_hot_list)
 
+def get_index(datas, value):
+    res = []
+    for data in datas:
+        for i in range(len(data)):
+            if(data[i] == value):
+                res.append(i)
+    return res
+
 def create_dataset(dataset,look_back=2):
     data, history,labels = [], [], []
     for i in range(len(dataset) - look_back):
@@ -79,7 +87,8 @@ def create_dataset(dataset,look_back=2):
 def val(model ,data, label):
     model.eval()
     var_x = torch.from_numpy(data).float()
-    var_y = torch.from_numpy(label).float()
+    index = np.array(get_index(label,1))
+    var_y = torch.from_numpy(index).long()
     var_x = Variable(var_x)
     var_y = Variable(var_y)
     if UseCuda:
@@ -89,8 +98,7 @@ def val(model ,data, label):
     out = net(var_x)
     out = out.view(-1, 3)
     _, pred = out.max(1)
-    real = label.max(1)
-    num_correct = (pred == real).sum().data[0]
+    num_correct = (pred == var_y).sum().data[0]
     acc = num_correct / float(var_x.shape[0])
     model.train()
     print("correct {}, total {}".format(num_correct, var_x.shape[0]))
@@ -98,8 +106,8 @@ def val(model ,data, label):
 
 zscore = lambda x : (x - x.mean())/x.std()
 #test_one_hot_encoding()
-window = 8
-hidden_size = 24
+window = 20
+hidden_size = 40
 batch_size = 8
 train_rate = 0.7
 
@@ -125,10 +133,11 @@ loss_function = nn.MSELoss()
 if UseCuda:
     net.cuda()
     loss_function.cuda()
-optimizer = optim.SGD(net.parameters(), lr=0.01)
+#optimizer = optim.SGD(net.parameters(), lr=0.01)
+optimizer = optim.Adam(net.parameters(), lr=0.01)
 
 iter_time = time.time()
-for e in range(2000):
+for e in range(5000):
     var_x = torch.from_numpy(train_data).float()
     var_y = torch.from_numpy(train_target).float()
     var_x = Variable(var_x)
@@ -146,6 +155,7 @@ for e in range(2000):
     optimizer.step()
 
     if (e + 1) % 10 == 0:
-        print('Epoch: {}, Loss: {:.5f}, time: {:.3f}'.format(e + 1, loss.data[0], time.time() - iter_time))
-        #val(net, train_data, train_target)
+        train_acc = val(net, train_data, train_target)
+        val_acc = val(net, test_data, test_target)
+        print('Epoch: {}, Loss: {:.5f}, time: {:.3f}, train_acc: {}, test_acc: {}'.format(e + 1, loss.data[0], time.time() - iter_time, train_acc, val_acc))
         iter_time = time.time()
